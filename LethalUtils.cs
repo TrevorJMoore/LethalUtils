@@ -30,7 +30,8 @@ namespace LethalUtils
         public static bool guiEnabled = false;
 
         // Changed flags
-        private static bool changedDeadline = false;
+        private static bool changedDeadline = true;
+        private static bool changedDeadlineLock = false;
         private static bool changedServerName = false;
         private static bool enabledInfiniteSprint = true;
 
@@ -39,65 +40,61 @@ namespace LethalUtils
 
         private static bool changedItemSlots = false;
 
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // ~~~~~~~~~~~~~~~ PATCH METHODS ~~~~~~~~~~~~~~~~~
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-        // Change the server's name (private methods need string literals)
-        [HarmonyPatch(typeof(GameNetworkManager), "SteamMatchmaking_OnLobbyCreated")]
-        [HarmonyPrefix]
-        static void UpdateServerName(ref HostSettings ___lobbyHostSettings, ref LobbySlot lobby)
-        {
-            if (changedServerName) 
-            { 
-                ___lobbyHostSettings.lobbyName = ServerChangeables.serverName.Value;
-            }
-            
-        }
-
-        // Change the server's deadline (public methods access through method calling)
+        // ChangeDeadline() - Change profit quota deadline
+        // Prefix Patches TimeOfDay.UpdateProfitQuotaCurrentTime() Method
+        // Targets instance variables totalTime and timeUntilDeadline
+        // It appears totalTime is the time of 1 day
+        // It appears timeUntilDeadline multiplies the totalTime by the number of days
         [HarmonyPatch(typeof(TimeOfDay), nameof(TimeOfDay.UpdateProfitQuotaCurrentTime))]
         [HarmonyPrefix]
-        static void ChangeDeadline(ref int ___daysUntilDeadline)
+        static void ChangeDeadline(ref float ___totalTime, ref float ___timeUntilDeadline)
         {
-            // If the server's deadline is changed, change the deadline
-            ___daysUntilDeadline = ServerChangeables.companyDeadline.Value;
+            if (changedDeadline)
+            {
+                ___timeUntilDeadline = ___totalTime * ServerChangeables.companyDeadline.Value;
+                changedDeadline = changedDeadlineLock;
+            }
+            
             
         }
 
-        // Change the length of days
+        /* ChangeDayTime()
+        // Prefix Patches TimeOfDay.Start() Method
+        //
         [HarmonyPatch(typeof(TimeOfDay), "Start")]
         [HarmonyPrefix]
         static void ChangeDayTime(ref float ___lengthOfHours, ref int ___numberOfHours)
         {
             ___lengthOfHours = ServerChangeables.serverTimeSpeed.Value;
             ___numberOfHours = ServerChangeables.serverTimeHours.Value;
-        }
+        }*/
         
 
+        // EnableInfiniteSprint() - Enables and disables infinite character sprint
+        // Prefix Patches PlayerControllerB.Update() Method
+        // Targets instance variable sprintMeter
+        // sprintMeter is calculated every frame, prefix sets value to 1.0f (maximum) each frame.
         [HarmonyPatch(typeof(PlayerControllerB), "Update")]
         [HarmonyPrefix]
-        static void InfiniteSprintPatch(ref float ___sprintMeter)
+        static void EnableInfiniteSprint(ref float ___sprintMeter)
         {
             if (enabledInfiniteSprint)
             {
                 ___sprintMeter = 1f;
                 
             }
-
-            
         }
 
 
 
-        /* On start of round, change credits to number specified in config.
-        // Need to do a reverse patch on Terminal.Start()
-        [HarmonyPatch(typeof(Terminal), "Start")]
-        [HarmonyPostfix]
-        static void ChangeStartingCredits(ref int ___groupCredits)
-        {
-            ___groupCredits = ServerChangeables.companyCredits.Value;
-            mls.LogInfo("changeStartingCredits companyCredits: " + ServerChangeables.companyCredits.Value);
-        }*/
-
+        // SetCredits() - Change lobby credits and/or lock them to a specific value
+        // Postfix Patches Terminal.RunTerminalEvents() Method
+        // Targets instance variable groupCredits
         [HarmonyPatch(typeof(Terminal), nameof(Terminal.RunTerminalEvents))]
         [HarmonyPostfix]
         static void SetCredits(ref int ___groupCredits)
@@ -112,25 +109,25 @@ namespace LethalUtils
             
         }
 
-        /*[HarmonyPatch(typeof(Terminal), nameof(Terminal.SyncGroupCreditsServerRpc))]
-        [HarmonyPostfix]
-        static void ChangeStartingCredits2(ref int ___groupCredits)
-        {
-            ___groupCredits = ServerChangeables.companyStartingCredits.Value;
-            mls.LogInfo("ChangeStartingCredits companyStartCredits.Value = " + ServerChangeables.companyStartingCredits.Value);
-        }*/
+        // -----------------------------------------------
 
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // ~~~~~~~~~~~~~~~ GUI Methods ~~~~~~~~~~~~~~~~~~~
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        // GUI Open will freeze player camera movement
-        // GUI Close will resume player camera movement
+        // StopCameraMovement() - Disable camera movement when custom GUI menu is opened
+        // Postfix Patches PlayerControllerB.Update() Method
+        // Targets instance variable playerActions
         [HarmonyPatch(typeof(PlayerControllerB), "Update")]
         [HarmonyPostfix]
         static void StopCameraMovement(ref PlayerActions ___playerActions)
         {
+            // GUI Open will freeze player camera movement
             if (guiEnabled)
             {
                 ___playerActions.Movement.Disable();                
             }
+            // GUI Close will resume player camera movement
             else if (!guiEnabled)
             {
                 ___playerActions.Movement.Enable();
@@ -139,7 +136,9 @@ namespace LethalUtils
 
         }
 
-
+        // GUI() - Creation of the GUI GameObject
+        // Prefix Patches StartOfRound.Awake() Method
+        // Runs as soon as a game is started.
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPrefix]
         static void GUI()
@@ -149,25 +148,32 @@ namespace LethalUtils
                 mls.LogInfo("LethalUtils.GUI()");
                 // Create the LethalGUI GameObject at start of round
                 var gameObject = new UnityEngine.GameObject("LethalGUI");
+                // Ensure that the GameObject stays between scenes so we don't have to recreate it
                 UnityEngine.Object.DontDestroyOnLoad(gameObject);
+                // Add the LethalGUI object to our gameobject
                 gameObject.AddComponent<LethalGUI>();
+                // Not necessary, remove later
                 gui = (LethalGUI)gameObject.GetComponent("LethalGUI");
             }
             
         }
 
+        // -----------------------------------------------
+
+
+        // Injection point
 
         private static LethalUtils Instance;
         void Awake()
         {
             Instance = this;
-            mls.LogInfo("Starting LethalUtils...");
+            mls.LogInfo("Loading LethalUtils...");
 
             mls.LogInfo("Reading config file values.");
+
             // Config file entries
             ServerChangeables.serverName = Config.Bind("Server", "ServerName", "LethalServer", "Set the name of the server.");
 
-            //ServerChangeables.serverTime = Config.Bind("Server.Time", "ServerTime", 0.0f, "Set the time of day for the server."); NOT A CONFIG OPTION USE IT THROUGH GUI
             ServerChangeables.serverTimeHours = Config.Bind("Server.Time", "ServerTimeHours", 7, "Set the number of hours for the day.");
             ServerChangeables.serverTimeSpeed = Config.Bind("Server.Time", "ServerTimeSpeed", 100.0f, "Set the length of hours for the day.");
 
@@ -176,7 +182,17 @@ namespace LethalUtils
             ServerChangeables.companyQuota = Config.Bind("Company", "ReachableQuota", 300, "Set the reachable quota for the server.");
             ServerChangeables.companyStartingCredits = Config.Bind("Company", "StartingCredits", 60, "Set the starting credits for the server.");
 
-            mls.LogInfo("Group Credits: " + ServerChangeables.companyStartingCredits.Value);
+            // Print to console current config file values
+            mls.LogInfo("ServerName: " + ServerChangeables.serverName);
+            mls.LogInfo("ServerTimeHours: " + ServerChangeables.serverTimeHours);
+            mls.LogInfo("ServerTimeSpeed: " + ServerChangeables.serverTimeSpeed);
+            mls.LogInfo("Deadline: " + ServerChangeables.companyDeadline);
+            mls.LogInfo("CurrentQuota: " + ServerChangeables.companyCurrentQuota);
+            mls.LogInfo("ReachableQuota: " + ServerChangeables.companyQuota);
+            mls.LogInfo("StartingCredits: " + ServerChangeables.companyStartingCredits);
+
+            mls.LogInfo("Finished reading config file.");
+
             mls.LogInfo("Begin patching...");
             harmony.PatchAll(typeof(LethalUtils));
             mls.LogInfo("Finished patching!");
