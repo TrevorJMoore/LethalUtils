@@ -12,15 +12,21 @@ namespace LethalUtils
 {
     internal class LethalGUI : MonoBehaviour
     {
+        // Constants
+        // Minimum and maximum values in percentage for the gui size
+        private const int MINWIDTH = 25;
+        private const int MINHEIGHT = 25;
+        private const int MAXWIDTH = 100;
+        private const int MAXHEIGHT = 100;
+
+
         private KeyCode menuKeybind = KeyCode.Home;
         
         // GUI properties
         private float menuWidth = ServerChangeables.menuWidth.Value;
         private float menuHeight = ServerChangeables.menuHeight.Value;
-
-        // Position GUI in center of screen
-        private int menuPosX = Screen.width / 8;
-        private int menuPosY = Screen.height / 8;
+        private int menuPosX = 0;
+        private int menuPosY = 0;
 
         // GUI elements
         Rect menuBackground = new Rect();
@@ -31,26 +37,28 @@ namespace LethalUtils
             
             if (LethalUtils.guiEnabled == true)
             {
-                
                 // Create GUI Container
                 // Check if the width and height are set correctly
-                if ((menuWidth >= 0 && menuWidth <= 100) && (menuHeight >= 0 && menuHeight <= 100))
+                if ((menuWidth >= MINWIDTH && menuWidth <= MAXWIDTH) && (menuHeight >= MINWIDTH && menuHeight <= MAXWIDTH))
                 {
+                    // Position the GUI in the center of the screen
+                    // We subtract the GUI's size by the screen's size to get the distance
+                    // Then divide by 2 to center the GUI between the distance
+                    menuPosX = (int)(Screen.width - (Screen.width*menuWidth / 100)) / 2;
+                    menuPosY = (int)(Screen.height - (Screen.height*menuHeight / 100)) / 2;
                     menuBackground.Set(menuPosX, menuPosY, Screen.width * (menuWidth/100), Screen.height * (menuHeight/100));
                 }
                 // If the width or height are set wrong, set to default size
                 else
                 {
-                    menuBackground.Set(menuPosX, menuPosY, (float)(Screen.width * 0.75), (float)(Screen.height * 0.75));
+                    menuBackground.Set(menuPosX, menuPosY, (float)(Screen.width), (float)(Screen.height));
                 }
                 GUI.Box(menuBackground, "Lethal Utilities");
-                
 
                 // Create GUI Elements
-
-
-
-                if (GUI.Button(new Rect(100, 100, 50, 50), "EXIT"))
+                Rect exitButton = new Rect(Screen.width - menuPosX, menuPosY, 50, 50);
+                
+                if (GUI.Button(exitButton, "X"))
                 {
                     LethalUtils.guiEnabled = false;
                     GUI.enabled = false;
