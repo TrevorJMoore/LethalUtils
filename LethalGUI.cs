@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.InputSystem.Controls;
 
 namespace LethalUtils
 {
@@ -13,11 +14,16 @@ namespace LethalUtils
     {
         private KeyCode menuKeybind = KeyCode.Home;
         
+        // GUI properties
+        private float menuWidth = ServerChangeables.menuWidth.Value;
+        private float menuHeight = ServerChangeables.menuHeight.Value;
 
-        private int menuWidth;
-        private int menuHeight;
-        private int menuPosX;
-        private int menuPosY;
+        // Position GUI in center of screen
+        private int menuPosX = Screen.width / 8;
+        private int menuPosY = Screen.height / 8;
+
+        // GUI elements
+        Rect menuBackground = new Rect();
 
         
         void OnGUI()
@@ -25,8 +31,24 @@ namespace LethalUtils
             
             if (LethalUtils.guiEnabled == true)
             {
+                
                 // Create GUI Container
-                GUI.Box(new Rect(menuPosX, menuPosY, menuWidth, menuHeight), "Lethal Utilities");
+                // Check if the width and height are set correctly
+                if ((menuWidth >= 0 && menuWidth <= 100) && (menuHeight >= 0 && menuHeight <= 100))
+                {
+                    menuBackground.Set(menuPosX, menuPosY, Screen.width * (menuWidth/100), Screen.height * (menuHeight/100));
+                }
+                // If the width or height are set wrong, set to default size
+                else
+                {
+                    menuBackground.Set(menuPosX, menuPosY, (float)(Screen.width * 0.75), (float)(Screen.height * 0.75));
+                }
+                GUI.Box(menuBackground, "Lethal Utilities");
+                
+
+                // Create GUI Elements
+
+
 
                 if (GUI.Button(new Rect(100, 100, 50, 50), "EXIT"))
                 {

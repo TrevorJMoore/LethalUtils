@@ -6,6 +6,11 @@ namespace LethalUtils
     internal static class ServerChangeables
     {
         // Establish Global Variables for Settings
+
+        // GUI Settings
+        public static ConfigEntry<float> menuWidth { get; set; }  // Set the width of the GUI
+        public static ConfigEntry<float> menuHeight { get; set; } // Set the height of the GUI
+
         // Server Configs
         public static ConfigEntry<string> serverName { get; set; }  // Enables editting of server name
         public static ConfigEntry<float> serverTime { get; set; }   // Enables editting of current time in game

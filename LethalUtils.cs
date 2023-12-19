@@ -177,19 +177,22 @@ namespace LethalUtils
             ServerChangeables.serverTimeHours = Config.Bind("Server.Time", "ServerTimeHours", 7, "Set the number of hours for the day.");
             ServerChangeables.serverTimeSpeed = Config.Bind("Server.Time", "ServerTimeSpeed", 100.0f, "Set the length of hours for the day.");
 
-            ServerChangeables.companyDeadline = Config.Bind("Company", "Deadline", 4, "Set the number of days until deadline for the server.");
+            ServerChangeables.companyDeadline = Config.Bind("Company", "Deadline", 3, "Set the number of days until deadline for the server.");
             ServerChangeables.companyCurrentQuota = Config.Bind("Company", "CurrentQuota", 0, "Set the currently obtained quota for the server.");
             ServerChangeables.companyQuota = Config.Bind("Company", "ReachableQuota", 300, "Set the reachable quota for the server.");
             ServerChangeables.companyStartingCredits = Config.Bind("Company", "StartingCredits", 60, "Set the starting credits for the server.");
 
+            ServerChangeables.menuWidth = Config.Bind("GUI", "MenuWidth", 75.0f, "Set the width of the GUI menu. [0-100]%");
+            ServerChangeables.menuHeight = Config.Bind("GUI", "MenuHeight", 75.0f, "Set the height of the GUI menu between. [0-100]%");
+
             // Print to console current config file values
-            mls.LogInfo("ServerName: " + ServerChangeables.serverName);
-            mls.LogInfo("ServerTimeHours: " + ServerChangeables.serverTimeHours);
-            mls.LogInfo("ServerTimeSpeed: " + ServerChangeables.serverTimeSpeed);
-            mls.LogInfo("Deadline: " + ServerChangeables.companyDeadline);
-            mls.LogInfo("CurrentQuota: " + ServerChangeables.companyCurrentQuota);
-            mls.LogInfo("ReachableQuota: " + ServerChangeables.companyQuota);
-            mls.LogInfo("StartingCredits: " + ServerChangeables.companyStartingCredits);
+            mls.LogInfo("ServerName: " + ServerChangeables.serverName.Value);
+            mls.LogInfo("ServerTimeHours: " + ServerChangeables.serverTimeHours.Value);
+            mls.LogInfo("ServerTimeSpeed: " + ServerChangeables.serverTimeSpeed.Value);
+            mls.LogInfo("Deadline: " + ServerChangeables.companyDeadline.Value);
+            mls.LogInfo("CurrentQuota: " + ServerChangeables.companyCurrentQuota.Value);
+            mls.LogInfo("ReachableQuota: " + ServerChangeables.companyQuota.Value);
+            mls.LogInfo("StartingCredits: " + ServerChangeables.companyStartingCredits.Value);
 
             mls.LogInfo("Finished reading config file.");
 
