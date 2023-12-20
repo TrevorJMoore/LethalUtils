@@ -22,7 +22,7 @@ namespace LethalUtils
         // Mod Metadata
         private const string modGUID = "MUFFIN.UTILS";
         private const string modName = "Lethal Utilities";
-        private const string modVersion = "0.0.1";
+        private const string modVersion = "0.0.2";
         private readonly Harmony harmony = new Harmony(modGUID);
         static internal ManualLogSource mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
         private static LethalGUI gui;
@@ -30,12 +30,12 @@ namespace LethalUtils
         public static bool guiEnabled = false;
 
         // Changed flags
-        private static bool changedDeadline = true;
+        private static bool changedDeadline = false;
         private static bool changedDeadlineLock = false;
         private static bool changedServerName = false;
-        private static bool enabledInfiniteSprint = true;
+        private static bool enabledInfiniteSprint = false;
 
-        private static bool enabledCredit = true;
+        private static bool enabledCredit = false;
         private static bool enabledCreditLock = false;
 
         private static bool changedItemSlots = false;
@@ -167,11 +167,12 @@ namespace LethalUtils
         void Awake()
         {
             Instance = this;
+            var totalTimeElapsed = System.Diagnostics.Stopwatch.StartNew();
             mls.LogInfo("Loading LethalUtils...");
 
             mls.LogInfo("Reading config file values.");
 
-            // Config file entries
+            // Bind config file entries
             ServerChangeables.serverName = Config.Bind("Server", "ServerName", "LethalServer", "Set the name of the server.");
 
             ServerChangeables.serverTimeHours = Config.Bind("Server.Time", "ServerTimeHours", 7, "Set the number of hours for the day.");
@@ -185,7 +186,7 @@ namespace LethalUtils
             ServerChangeables.menuWidth = Config.Bind("GUI", "MenuWidth", 75.0f, "Set the width of the GUI menu. [0-100]%");
             ServerChangeables.menuHeight = Config.Bind("GUI", "MenuHeight", 75.0f, "Set the height of the GUI menu between. [0-100]%");
 
-            // Print to console current config file values
+            // Print to the console all current values in the config file
             mls.LogInfo("ServerName: " + ServerChangeables.serverName.Value);
             mls.LogInfo("ServerTimeHours: " + ServerChangeables.serverTimeHours.Value);
             mls.LogInfo("ServerTimeSpeed: " + ServerChangeables.serverTimeSpeed.Value);
@@ -199,7 +200,9 @@ namespace LethalUtils
             mls.LogInfo("Begin patching...");
             harmony.PatchAll(typeof(LethalUtils));
             mls.LogInfo("Finished patching!");
-            mls.LogInfo("Finished loading LethalUtils!");
+            totalTimeElapsed.Stop();
+            mls.LogInfo("Finished loading LethalUtils! (" + totalTimeElapsed.ElapsedMilliseconds + "ms)");
+
 
         }
 

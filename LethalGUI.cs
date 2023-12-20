@@ -34,7 +34,6 @@ namespace LethalUtils
         
         void OnGUI()
         {
-            
             if (LethalUtils.guiEnabled == true)
             {
                 // Create GUI Container
@@ -53,11 +52,30 @@ namespace LethalUtils
                 {
                     menuBackground.Set(menuPosX, menuPosY, (float)(Screen.width), (float)(Screen.height));
                 }
-                GUI.Box(menuBackground, "Lethal Utilities");
-
-                // Create GUI Elements
-                Rect exitButton = new Rect(Screen.width - menuPosX, menuPosY, 50, 50);
+                GUI.Box(menuBackground, "Lethal Utilities Menu");
                 
+                
+                // Create GUI Elements
+                // Space between individual elements on the menu
+                int elementPadding = (int)(Screen.height * menuHeight / 100) / 32;
+
+                // Size of the buttons on the menu
+                int buttonSizes = (int)(Screen.height * menuHeight / 100) / 16;
+                // Size of the titles on the menu
+                int titleSize = (int)(Screen.height * menuHeight / 100) / 16;
+
+                // Create buttons
+                Rect exitButton = new Rect(Screen.width - (menuPosX + buttonSizes + elementPadding), menuPosY + elementPadding, buttonSizes, buttonSizes);
+                // Create titles
+                Rect servTitleLabel = new Rect(menuPosX + elementPadding, menuPosY + elementPadding, titleSize * 15, titleSize);
+                Rect clientTitleLabel = new Rect(Screen.width - (menuPosX + titleSize * 15 + elementPadding), menuPosY + elementPadding, titleSize * 15, titleSize);
+                GUIStyle style = GUI.skin.GetStyle("label");
+                style.fontSize = (int)(Screen.height * menuHeight / 100) / 32;
+
+
+                // Place GUI Elements
+                GUI.Label(servTitleLabel, "Server Settings");
+                GUI.Label(clientTitleLabel, "Client Settings");
                 if (GUI.Button(exitButton, "X"))
                 {
                     LethalUtils.guiEnabled = false;
